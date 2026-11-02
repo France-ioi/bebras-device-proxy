@@ -48,9 +48,9 @@ function makePlatformCaller(): PlatformCaller {
 /**
  * Proxy for a BluetoothRemoteGATTCharacteristic.
  *
- * Provides `writeValue`, `writeValueWithResponse`, `startNotifications`,
- * `stopNotifications`, and event listener support for
- * `characteristicvaluechanged` events.
+ * Provides `writeValue`, `writeValueWithResponse`,
+ * `writeValueWithoutResponse`, `startNotifications`, `stopNotifications`,
+ * and event listener support for `characteristicvaluechanged` events.
  */
 export class CharacteristicProxy {
   readonly id: string;
@@ -86,6 +86,19 @@ export class CharacteristicProxy {
   async writeValueWithResponse(data: ArrayBuffer | DataView): Promise<void> {
     const buffer = (data instanceof DataView ? data.buffer : data) as ArrayBuffer;
     const result = await this.callPlatform('writeValueWithResponse', [
+      this.id,
+      arrayBufferToBase64(buffer),
+    ]);
+    if (result.error) throw new Error(result.message);
+  }
+
+  /**
+   * Write data to the characteristic without waiting for an acknowledgement
+   * from the server (GATT "Write Without Response").
+   */
+  async writeValueWithoutResponse(data: ArrayBuffer | DataView): Promise<void> {
+    const buffer = (data instanceof DataView ? data.buffer : data) as ArrayBuffer;
+    const result = await this.callPlatform('writeValueWithoutResponse', [
       this.id,
       arrayBufferToBase64(buffer),
     ]);

@@ -223,6 +223,17 @@ export function createPlatformBluetoothProxy(): PlatformBluetoothProxy {
     callback({ written: true });
   }
 
+  async function handleWriteValueWithoutResponse(args: any[], callback: (result: any) => void): Promise<void> {
+    const [charId, dataBase64] = args;
+    const entry = state.characteristics.get(charId);
+    if (!entry) {
+      callback({ error: true, message: 'Characteristic not found' });
+      return;
+    }
+    await entry.characteristic.writeValueWithoutResponse(base64ToArrayBuffer(dataBase64));
+    callback({ written: true });
+  }
+
   async function handleSubscribe(args: any[], callback: (result: any) => void): Promise<void> {
     const [charId] = args;
     const entry = state.characteristics.get(charId);
@@ -284,6 +295,7 @@ export function createPlatformBluetoothProxy(): PlatformBluetoothProxy {
     getCharacteristic: handleGetCharacteristic,
     writeValue: handleWriteValue,
     writeValueWithResponse: handleWriteValueWithResponse,
+    writeValueWithoutResponse: handleWriteValueWithoutResponse,
     subscribe: handleSubscribe,
     unsubscribe: handleUnsubscribe,
   };
