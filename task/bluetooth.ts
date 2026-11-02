@@ -288,6 +288,11 @@ export class DeviceProxy {
   _getCharacteristic(charId: string): CharacteristicProxy | undefined {
     return this.characteristics.get(charId);
   }
+
+  /** @internal Forget all registered characteristics (their IDs are invalidated on disconnect). */
+  _clearCharacteristics(): void {
+    this.characteristics.clear();
+  }
 }
 
 // ─── Main proxy factory ─────────────────────────────────────────────────
@@ -362,10 +367,13 @@ export function createBluetoothProxy(): TaskBluetoothProxy {
     const dev = devices.get(event.deviceId);
     if (dev) {
       dev._dispatchDisconnect();
-      devices.delete(event.deviceId);
-      if (currentDevice?.id === event.deviceId) {
-        currentDevice = null;
-      }
+      // Keep the device in the registry and keep currentDevice pointing at it:
+      // the API performs automatic reconnections on the same device object
+      // without calling requestDevice() again, so characteristics fetched
+      // after the reconnection must still be registered and dispatched.
+      // Only the characteristic IDs from before the disconnect are stale (the
+      // platform invalidated them in its cleanup), so clear those.
+      dev._clearCharacteristics();
     }
   }
 
